@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Prepare SSH
         env:
@@ -26,6 +26,21 @@ jobs:
           printf '%s\n' "$SERVER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"
 
+      - name: Test SSH connection and deploy permissions
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=10 \
+            -p "$SERVER_PORT" -i "$HOME/.ssh/deploy_key" \
+            "$SERVER_USER@$SERVER_HOST" \
+            "id && test -d '$DEPLOY_PATH' && test -w '$DEPLOY_PATH'"
+
       - name: Upload static files
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -33,7 +48,11 @@ jobs:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          scp -P "$SERVER_PORT" -i "$HOME/.ssh/deploy_key" -r \
+          scp -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=10 \
+            -P "$SERVER_PORT" -i "$HOME/.ssh/deploy_key" -r \
             index.html styles.css script.js \
             project-auto-vaulting.html resume-public.html resume-public.pdf public \
             "$SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/"
@@ -47,4 +66,4 @@ jobs:
         run: |
           ssh -p "$SERVER_PORT" -i "$HOME/.ssh/deploy_key" \
             "$SERVER_USER@$SERVER_HOST" \
-            "test -s '$DEPLOY_PATH/index.html'"
+            "test -s '$DEPLOY_PATH/index.html' && stat -c '%n %s bytes' '$DEPLOY_PATH/index.html'"
