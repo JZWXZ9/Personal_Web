@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="JZWXZ 的 auto_vaulting 项目详情。" />
+    <title>auto_vaulting｜JZWXZ 项目</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="project-page">
+    <header class="site-header">
+      <div class="container nav-shell">
+        <a class="brand" href="./index.html#top" aria-label="返回首页"><span class="brand-mark" aria-hidden="true">J</span><span>JZWXZ</span></a>
+        <nav class="main-nav" aria-label="项目导航">
+          <a class="nav-link" href="./index.html#about">关于</a>
+          <a class="nav-link is-active" href="./index.html#projects">项目</a>
+          <a class="nav-link" href="./index.html#notes">笔记</a>
+          <a class="nav-link" href="./index.html#resume">简历</a>
+          <a class="nav-link nav-link--github" href="https://github.com/JZWXZ9/auto_vaulting" target="_blank" rel="noreferrer">GitHub ↗</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="project-detail container">
+      <a class="back-link" href="./index.html#projects">← 返回项目列表</a>
+      <div class="project-detail-head">
+        <div>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> PROJECT / 2026</p>
+          <h1>auto_<em>vaulting</em></h1>
+          <p class="detail-lead">Minecraft 试炼宝库自动开箱脚本</p>
+        </div>
+        <a class="button button--dark" href="https://github.com/JZWXZ9/auto_vaulting" target="_blank" rel="noreferrer">查看 GitHub <span aria-hidden="true">↗</span></a>
+      </div>
+
+      <div class="detail-layout">
+        <article class="detail-article">
+          <section class="detail-section">
+            <p class="section-kicker">01 / CONTEXT</p>
+            <h2>从游戏机制里，<br /><span>找到一个自动化问题。</span></h2>
+            <p>试炼宝库允许稀缺物品再生，但同一名玩家只能开启一次。项目利用 Carpet Mod 的假人功能，结合服务器对已开启玩家记录的限制，尝试实现批量、稳定的自动开箱流程。</p>
+          </section>
+          <section class="detail-section">
+            <p class="section-kicker">02 / WHAT IT DOES</p>
+            <h2>四个连续动作，<br /><span>一套可校验的循环。</span></h2>
+            <div class="detail-steps">
+              <div><b>01</b><strong>生成假人</strong><span>在指定坐标按配置创建带编号的假人。</span></div>
+              <div><b>02</b><strong>执行右键</strong><span>通过聊天栏自动发送指令，完成开箱操作。</span></div>
+              <div><b>03</b><strong>退出假人</strong><span>操作完成后自动清理当前假人。</span></div>
+              <div><b>04</b><strong>日志验证</strong><span>监听 Minecraft 聊天日志，确认召唤和退出是否成功。</span></div>
+            </div>
+          </section>
+          <section class="detail-section">
+            <p class="section-kicker">03 / CONFIGURATION</p>
+            <h2>把变化留给配置，<br /><span>把流程固定下来。</span></h2>
+            <p>项目通过 <code>config.py</code> 集中管理日志路径、生成坐标、朝向、假人名称、循环次数和时间间隔等参数，让脚本能够适配不同的本地游戏环境。</p>
+            <div class="code-note"><span class="code-note-dot"></span><code>config.py</code><span>位置 · 朝向 · 前缀 · 轮次 · 间隔</span></div>
+          </section>
+          <section class="detail-section">
+            <p class="section-kicker">04 / RELIABILITY</p>
+            <h2>不是只执行，<br /><span>还要确认执行成功。</span></h2>
+            <p>脚本通过装饰器封装“发送指令—读取日志—判断反馈”的过程。如果没有在日志中确认假人已经进入或退出，流程会等待后重试；对于退出后的操作，也会再次发送右键指令。这让自动化流程不只依赖固定等待时间，而是有了来自游戏日志的状态反馈。</p>
+          </section>
+        </article>
+
+        <aside class="detail-aside">
+          <div class="aside-card aside-card--blue"><span class="aside-label">STACK</span><strong>Python</strong><strong>PyAutoGUI</strong><strong>Carpet Mod</strong><strong>Minecraft 1.21</strong></div>
+          <div class="aside-card"><span class="aside-label">REPOSITORY</span><a href="https://github.com/JZWXZ9/auto_vaulting" target="_blank" rel="noreferrer">JZWXZ9/<br />auto_vaulting ↗</a></div>
+          <div class="aside-card"><span class="aside-label">STATUS</span><strong>持续完善中</strong><p>此页面只整理仓库中已经确认的公开内容，后续可以继续补充演示截图和运行记录。</p></div>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="site-footer"><div class="container footer-inner"><span>© 2026 JZWXZ</span><span>PROJECT / auto_vaulting</span><a href="#top">返回顶部 ↑</a></div></footer>
+  </body>
+</html>
