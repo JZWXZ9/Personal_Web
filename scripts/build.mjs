@@ -184,7 +184,11 @@ function renderLayout({ title, description, activeNav, contentHtml, includeKatex
 
     <div class="castle-backdrop" aria-hidden="true">
       <div class="castle-backdrop-image"></div>
-      <div class="castle-backdrop-fountain"></div>
+      <canvas class="castle-backdrop-fx" id="castle-fx-canvas"></canvas>
+      <div class="castle-backdrop-ralsei">
+        <div class="castle-ralsei-shadow"></div>
+        <div class="castle-ralsei-sprite pixel-art"></div>
+      </div>
       <div class="castle-backdrop-scrim"></div>
     </div>
 

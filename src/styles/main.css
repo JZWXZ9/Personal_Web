@@ -162,24 +162,57 @@ button {
   transform: scale(1.01);
 }
 
-/* Subtle surging glow over the center Dark Fountain */
-.castle-backdrop-fountain {
+/* Live Canvas Layer: Surging Dark Fountain + Twinkling Starlight */
+.castle-backdrop-fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Official back-view Ralsei with 4-frame animated fluttering pink scarf */
+.castle-backdrop-ralsei {
+  --ralsei-fw: 108px;
   position: absolute;
   left: 50%;
-  top: 0;
-  height: 56%;
-  width: min(260px, 28vw);
-  transform: translateX(-50%);
-  background: linear-gradient(
-    180deg,
-    rgba(167, 139, 250, 0.24) 0%,
-    rgba(139, 92, 246, 0.2) 45%,
-    rgba(56, 189, 248, 0.16) 78%,
-    transparent 100%
-  );
-  filter: blur(22px);
-  mix-blend-mode: screen;
-  animation: fountainSurge 5s ease-in-out infinite;
+  bottom: 41%;
+  transform: translateX(-29%);
+  width: var(--ralsei-fw);
+  height: calc(var(--ralsei-fw) * 40 / 36);
+  pointer-events: none;
+}
+
+.castle-ralsei-shadow {
+  position: absolute;
+  left: 6%;
+  bottom: -5px;
+  width: 44%;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(4, 7, 18, 0.72);
+  filter: blur(4px);
+}
+
+.castle-ralsei-sprite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-image: url("/assets/deltarune/ralsei-back-wind.png");
+  background-repeat: no-repeat;
+  background-size: calc(var(--ralsei-fw) * 4) 100%;
+  background-position: 0 0;
+  filter: brightness(0.92) drop-shadow(0 0 12px rgba(139, 92, 246, 0.24));
+  animation: ralseiScarf 0.92s steps(4) infinite;
+}
+
+@keyframes ralseiScarf {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: calc(var(--ralsei-fw) * -4);
+  }
 }
 
 /* Balanced atmospheric veil so content stays crisp and readable */
@@ -188,22 +221,11 @@ button {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(9, 12, 24, 0.56) 0%,
-    rgba(10, 14, 28, 0.34) 44%,
-    rgba(10, 14, 28, 0.48) 76%,
-    rgba(8, 11, 22, 0.68) 100%
+    rgba(9, 12, 24, 0.5) 0%,
+    rgba(10, 14, 28, 0.28) 44%,
+    rgba(10, 14, 28, 0.42) 76%,
+    rgba(8, 11, 22, 0.64) 100%
   );
-}
-
-@keyframes fountainSurge {
-  0%, 100% {
-    opacity: 0.55;
-    transform: translateX(-50%) scaleY(0.96);
-  }
-  50% {
-    opacity: 1;
-    transform: translateX(-50%) scaleY(1.05);
-  }
 }
 
 /* ==========================================================================
@@ -211,8 +233,6 @@ button {
    ========================================================================== */
 
 .app-shell {
-  position: relative;
-  z-index: 1;
   display: flex;
   min-height: 100vh;
 }
@@ -228,7 +248,7 @@ button {
   display: flex;
   flex-direction: column;
   padding: 28px 18px 20px;
-  z-index: 40;
+  z-index: 50;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.25s ease;
 }
 
@@ -466,6 +486,8 @@ button {
    ========================================================================== */
 
 .main-wrap {
+  position: relative;
+  z-index: 1;
   flex: 1;
   margin-left: var(--sidebar-width);
   min-width: 0;
@@ -1381,6 +1403,11 @@ button {
 
   .castle-backdrop {
     left: 0;
+  }
+
+  .castle-backdrop-ralsei {
+    --ralsei-fw: 90px;
+    bottom: 38%;
   }
 
   .home-layout {
