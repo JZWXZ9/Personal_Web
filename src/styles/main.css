@@ -42,32 +42,32 @@
 }
 
 [data-theme="dark"] {
-  /* Dark Mode: Deltarune Castle Town Night */
-  --bg: #0f111a;
-  --bg-sidebar: #141723;
-  --surface: #181c2b;
-  --surface-subtle: #1d2234;
-  --surface-hover: #23293e;
+  /* Dark Mode: Deltarune Castle Town Night + Translucent Frosted Surfaces */
+  --bg: #0c0f1d;
+  --bg-sidebar: rgba(14, 17, 30, 0.88);
+  --surface: rgba(17, 22, 40, 0.78);
+  --surface-subtle: rgba(23, 29, 52, 0.76);
+  --surface-hover: rgba(34, 43, 74, 0.82);
 
-  --ink: #eceff4;
-  --ink-secondary: #a2acc0;
-  --ink-muted: #6f7a91;
+  --ink: #eef2fa;
+  --ink-secondary: #b4bfd6;
+  --ink-muted: #8290ad;
 
-  --border: #252b40;
-  --border-strong: #343d5a;
+  --border: rgba(105, 130, 196, 0.24);
+  --border-strong: rgba(128, 158, 228, 0.38);
 
   --accent: #52d1a0;
-  --accent-hover: #6ee0b4;
-  --accent-soft: rgba(82, 209, 160, 0.13);
+  --accent-hover: #70e2b7;
+  --accent-soft: rgba(82, 209, 160, 0.16);
   --accent-rose: #e87ca4;
-  --accent-rose-soft: rgba(232, 124, 164, 0.14);
+  --accent-rose-soft: rgba(232, 124, 164, 0.16);
   --accent-gold: #ffd454;
-  --accent-gold-soft: rgba(255, 212, 84, 0.14);
+  --accent-gold-soft: rgba(255, 212, 84, 0.16);
 
-  --code-bg: #131624;
-  --code-border: #252c44;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28);
-  --shadow-md: 0 14px 36px rgba(0, 0, 0, 0.36);
+  --code-bg: rgba(12, 16, 30, 0.88);
+  --code-border: rgba(105, 130, 196, 0.25);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 14px 36px rgba(0, 0, 0, 0.42);
 }
 
 /* ==========================================================================
@@ -130,10 +130,89 @@ button {
 }
 
 /* ==========================================================================
+   Castle Town Full-Viewport Backdrop (Dark Mode Only)
+   ========================================================================== */
+
+.castle-backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--sidebar-width);
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+[data-theme="dark"] .castle-backdrop {
+  opacity: 1;
+  visibility: visible;
+}
+
+.castle-backdrop-image {
+  position: absolute;
+  inset: 0;
+  background-image: url("/assets/deltarune/castle-town-bg.webp");
+  background-size: cover;
+  background-position: center 64%;
+  background-repeat: no-repeat;
+  transform: scale(1.01);
+}
+
+/* Subtle surging glow over the center Dark Fountain */
+.castle-backdrop-fountain {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 56%;
+  width: min(260px, 28vw);
+  transform: translateX(-50%);
+  background: linear-gradient(
+    180deg,
+    rgba(167, 139, 250, 0.24) 0%,
+    rgba(139, 92, 246, 0.2) 45%,
+    rgba(56, 189, 248, 0.16) 78%,
+    transparent 100%
+  );
+  filter: blur(22px);
+  mix-blend-mode: screen;
+  animation: fountainSurge 5s ease-in-out infinite;
+}
+
+/* Balanced atmospheric veil so content stays crisp and readable */
+.castle-backdrop-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(9, 12, 24, 0.56) 0%,
+    rgba(10, 14, 28, 0.34) 44%,
+    rgba(10, 14, 28, 0.48) 76%,
+    rgba(8, 11, 22, 0.68) 100%
+  );
+}
+
+@keyframes fountainSurge {
+  0%, 100% {
+    opacity: 0.55;
+    transform: translateX(-50%) scaleY(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scaleY(1.05);
+  }
+}
+
+/* ==========================================================================
    App Shell: Fixed Sidebar + Scrollable Main Column
    ========================================================================== */
 
 .app-shell {
+  position: relative;
+  z-index: 1;
   display: flex;
   min-height: 100vh;
 }
@@ -151,6 +230,11 @@ button {
   padding: 28px 18px 20px;
   z-index: 40;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.25s ease;
+}
+
+[data-theme="dark"] .sidebar {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .sidebar-brand {
@@ -250,100 +334,35 @@ button {
   letter-spacing: 0.02em;
 }
 
-/* Sidebar Ralsei Companion Widget */
-.ralsei-card {
+/* Sidebar Quiet Ralsei Mascot */
+.ralsei-mascot {
   margin-top: 16px;
-  padding: 12px 12px 10px;
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-}
-
-.ralsei-speech {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  line-height: 1.45;
-  color: var(--ink-secondary);
-  min-height: 2.1em;
-  margin: 0 0 8px;
-}
-
-.ralsei-speech::before {
-  content: "* ";
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.ralsei-trigger {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 8px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-subtle);
-  text-align: left;
-  transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
-}
-
-.ralsei-trigger:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.ralsei-trigger:active {
-  transform: translateY(1px);
-}
-
-.ralsei-sprite-wrap {
-  width: 42px;
-  height: 54px;
+  padding: 6px 10px 2px;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
-  flex-shrink: 0;
+  justify-content: flex-start;
+  pointer-events: none;
+  user-select: none;
 }
 
 .ralsei-sprite {
   width: auto;
-  height: 50px;
-  transition: transform 0.18s ease;
+  height: 54px;
+  opacity: 0.94;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.14));
 }
 
-.ralsei-trigger:hover .ralsei-sprite {
-  transform: translateY(-2px);
+.ralsei-sprite--dark {
+  display: none;
 }
 
-.ralsei-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+[data-theme="dark"] .ralsei-sprite--light {
+  display: none;
 }
 
-.ralsei-name {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.ralsei-badge {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: var(--accent-rose-soft);
-  color: var(--accent-rose);
-}
-
-.ralsei-hint {
-  font-size: 0.7rem;
-  color: var(--ink-muted);
+[data-theme="dark"] .ralsei-sprite--dark {
+  display: block;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
 }
 
 /* Sidebar Footer Tools */
@@ -511,11 +530,19 @@ button {
 }
 
 /* ==========================================================================
-   Home Welcome & Castle Town Pixel Diorama
+   Home Welcome Layout (Open & Airy so Castle Town Backdrop Shines in Dark Mode)
    ========================================================================== */
 
+.home-layout {
+  min-height: calc(100vh - 165px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 48px;
+}
+
 .welcome-hero {
-  margin-bottom: 32px;
+  margin-bottom: 0;
 }
 
 .welcome-hero .page-title {
@@ -523,231 +550,57 @@ button {
 }
 
 .welcome-lead {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   color: var(--ink-secondary);
   font-size: 1rem;
   line-height: 1.85;
-  max-width: 58ch;
+  max-width: 56ch;
 }
 
-/* Castle Town Miniature Stage */
-.castle-diorama {
-  position: relative;
-  margin: 28px 0 40px;
+[data-theme="dark"] .welcome-hero .page-title,
+[data-theme="dark"] .welcome-lead,
+[data-theme="dark"] .page-header .page-title,
+[data-theme="dark"] .page-header .page-subtitle {
+  text-shadow: 0 2px 14px rgba(6, 8, 18, 0.78);
+}
+
+[data-theme="dark"] .index-card {
+  background: rgba(15, 20, 38, 0.68);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+[data-theme="dark"] .note-hero-card,
+[data-theme="dark"] .chapter-item,
+[data-theme="dark"] .project-banner,
+[data-theme="dark"] .contact-card,
+[data-theme="dark"] .blog-tip,
+[data-theme="dark"] .blog-empty,
+[data-theme="dark"] .pdf-viewer-shell {
+  backdrop-filter: blur(11px);
+  -webkit-backdrop-filter: blur(11px);
+}
+
+[data-theme="dark"] .blog-list {
+  background: rgba(15, 19, 35, 0.76);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--border-strong);
-  background:
-    radial-gradient(ellipse 42% 72% at 50% 42%, rgba(92, 114, 232, 0.28), transparent 72%),
-    radial-gradient(ellipse 26% 40% at 24% 72%, rgba(56, 189, 248, 0.14), transparent 70%),
-    radial-gradient(ellipse 24% 40% at 77% 72%, rgba(82, 209, 160, 0.14), transparent 70%),
-    linear-gradient(180deg, #0b0d19 0%, #131830 58%, #18203c 84%, #111526 100%);
-  box-shadow: var(--shadow-md);
-  color: #eceff4;
+  padding: 6px 16px;
+  backdrop-filter: blur(11px);
+  -webkit-backdrop-filter: blur(11px);
 }
 
-.diorama-stage {
-  position: relative;
-  height: 224px;
-  overflow: hidden;
+[data-theme="dark"] .blog-list .blog-row:last-child {
+  border-bottom: 0;
 }
 
-/* Pixel starfield */
-.diorama-stars {
-  position: absolute;
-  inset: 0 0 46px 0;
-  background-image:
-    radial-gradient(1.5px 1.5px at 11% 22%, rgba(255, 255, 255, 0.75), transparent),
-    radial-gradient(1.5px 1.5px at 23% 14%, rgba(167, 243, 208, 0.7), transparent),
-    radial-gradient(1px 1px at 36% 29%, rgba(255, 255, 255, 0.55), transparent),
-    radial-gradient(1.5px 1.5px at 66% 18%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1.5px 1.5px at 79% 27%, rgba(196, 181, 253, 0.75), transparent),
-    radial-gradient(1px 1px at 89% 16%, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(1.5px 1.5px at 17% 44%, rgba(255, 255, 255, 0.4), transparent),
-    radial-gradient(1px 1px at 84% 42%, rgba(167, 243, 208, 0.5), transparent);
-  pointer-events: none;
-}
-
-/* Ground band */
-.diorama-ground {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 44px;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      rgba(124, 152, 232, 0.08) 0 24px,
-      rgba(124, 152, 232, 0.02) 24px 48px
-    ),
-    linear-gradient(180deg, #1b2444 0%, #12172b 100%);
-  border-top: 2px solid #35477d;
-}
-
-/* Castle Town Fountain Beam */
-.diorama-fountain-glow {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 42px;
-  width: 90px;
-  transform: translateX(-50%);
-  background: linear-gradient(
-    180deg,
-    rgba(120, 148, 255, 0.22) 0%,
-    rgba(96, 165, 250, 0.16) 55%,
-    rgba(56, 189, 248, 0.3) 100%
-  );
-  filter: blur(12px);
-  animation: fountainPulse 4.2s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.diorama-fountain {
-  position: absolute;
-  left: 50%;
-  bottom: 40px;
-  transform: translateX(-50%);
-  height: 162px;
-  width: auto;
-  opacity: 0.92;
-  filter: drop-shadow(0 0 12px rgba(96, 130, 255, 0.45));
-  pointer-events: none;
-}
-
-.diorama-house-left {
-  position: absolute;
-  left: 6%;
-  bottom: 42px;
-  height: 118px;
-  width: auto;
-  opacity: 0.9;
-  pointer-events: none;
-}
-
-.diorama-torch-left {
-  position: absolute;
-  left: 24%;
-  bottom: 43px;
-  height: 38px;
-  width: auto;
-  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.65));
-  animation: torchFlicker 2.6s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.diorama-book {
-  position: absolute;
-  right: 22%;
-  bottom: 42px;
-  height: 58px;
-  width: auto;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
-  pointer-events: none;
-}
-
-.diorama-cafe {
-  position: absolute;
-  right: 4%;
-  bottom: 40px;
-  height: 118px;
-  width: auto;
-  opacity: 0.92;
-  pointer-events: none;
-}
-
-.diorama-ralsei-btn {
-  position: absolute;
-  left: 39%;
-  bottom: 36px;
-  transform: translateX(-50%);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  z-index: 4;
-  transition: transform 0.16s ease;
-}
-
-.diorama-ralsei-btn:hover {
-  transform: translateX(-50%) translateY(-3px);
-}
-
-.diorama-ralsei {
-  height: 82px;
-  width: auto;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
-}
-
-.diorama-savepoint-btn {
-  position: absolute;
-  left: 61%;
-  bottom: 50px;
-  transform: translateX(-50%);
-  padding: 6px;
-  border: 0;
-  background: transparent;
-  z-index: 4;
-  border-radius: 50%;
-}
-
-.diorama-savepoint {
-  height: 34px;
-  width: auto;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.85));
-  animation: saveFloat 2.8s ease-in-out infinite;
-}
-
-.diorama-savepoint-btn.is-saved .diorama-savepoint {
-  filter: drop-shadow(0 0 16px #ffd454) brightness(1.25);
-}
-
-.diorama-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 16px;
-  background: rgba(11, 13, 24, 0.92);
-  border-top: 1px solid rgba(116, 136, 204, 0.22);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-}
-
-.diorama-dialogue {
-  margin: 0;
-  color: #dce4f5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.diorama-dialogue::before {
-  content: "* ";
-  color: #52d1a0;
-  font-weight: 700;
-}
-
-.diorama-tag {
-  flex-shrink: 0;
-  color: #7d8bb0;
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-}
-
-@keyframes saveFloat {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-4px) scale(1.06); }
-}
-
-@keyframes fountainPulse {
-  0%, 100% { opacity: 0.75; }
-  50% { opacity: 1; }
-}
-
-@keyframes torchFlicker {
-  0%, 100% { transform: scale(1); opacity: 0.95; }
-  50% { transform: scale(1.04); opacity: 1; }
+[data-theme="dark"] .prose {
+  padding: 28px 32px;
+  border-radius: var(--radius-lg);
+  background: rgba(14, 18, 34, 0.82);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Home Index Directory Cards */
@@ -1526,26 +1379,17 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .diorama-stage {
-    height: 196px;
+  .castle-backdrop {
+    left: 0;
   }
 
-  .diorama-cafe {
-    height: 88px;
-    right: 2%;
+  .home-layout {
+    min-height: auto;
+    gap: 32px;
   }
 
-  .diorama-house-left {
-    height: 88px;
-    left: 2%;
-  }
-
-  .diorama-book {
-    display: none;
-  }
-
-  .diorama-ralsei {
-    height: 68px;
+  [data-theme="dark"] .prose {
+    padding: 20px 18px;
   }
 
   .pdf-frame {

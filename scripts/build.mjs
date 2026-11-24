@@ -182,6 +182,12 @@ function renderLayout({ title, description, activeNav, contentHtml, includeKatex
       </button>
     </header>
 
+    <div class="castle-backdrop" aria-hidden="true">
+      <div class="castle-backdrop-image"></div>
+      <div class="castle-backdrop-fountain"></div>
+      <div class="castle-backdrop-scrim"></div>
+    </div>
+
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
     <div class="app-shell">
@@ -198,30 +204,17 @@ function renderLayout({ title, description, activeNav, contentHtml, includeKatex
           ${navHtml}
         </nav>
 
-        <div class="ralsei-card" aria-label="Deltarune 彩蛋">
-          <p class="ralsei-speech" id="ralsei-sidebar-speech">Welcome to Castle Town. Take your time reading.</p>
-          <button
-            type="button"
-            class="ralsei-trigger"
-            id="ralsei-sidebar-btn"
-            title="点击切换 Ralsei 版本（Ch.1 / Ch.2）"
-          >
-            <span class="ralsei-sprite-wrap">
-              <img
-                id="ralsei-sidebar-img"
-                class="ralsei-sprite pixel-art"
-                src="/assets/deltarune/ralsei-ch2.png"
-                alt="Ralsei pixel sprite"
-              />
-            </span>
-            <span class="ralsei-meta">
-              <span class="ralsei-name">
-                Ralsei
-                <span class="ralsei-badge" id="ralsei-sidebar-badge">Ch.2</span>
-              </span>
-              <span class="ralsei-hint">点我切换装扮</span>
-            </span>
-          </button>
+        <div class="ralsei-mascot" aria-hidden="true">
+          <img
+            class="ralsei-sprite ralsei-sprite--light pixel-art"
+            src="/assets/deltarune/ralsei-ch2.png"
+            alt=""
+          />
+          <img
+            class="ralsei-sprite ralsei-sprite--dark pixel-art"
+            src="/assets/deltarune/ralsei-ch1.png"
+            alt=""
+          />
         </div>
 
         <div class="sidebar-footer">
@@ -324,103 +317,59 @@ function buildHomePage(posts, notesData) {
     : '还没有写下第一篇随笔，支持 Markdown 与数学公式，随时落笔。';
 
   const contentHtml = `
-    <section class="welcome-hero">
-      <p class="page-kicker">CASTLE TOWN · WELCOME</p>
-      <h1 class="page-title">你好，这里是 JZWXZ。</h1>
-      <p class="welcome-lead">
-        一个安静的个人角落，用来收放随手写下的短文、认真排版过的数学学习笔记，以及自己动手做的小项目。从左侧目录随时切换，不必一路往下翻。
-      </p>
-    </section>
+    <div class="home-layout">
+      <section class="welcome-hero">
+        <p class="page-kicker">WELCOME · JZWXZ</p>
+        <h1 class="page-title">你好，这里是 JZWXZ。</h1>
+        <p class="welcome-lead">
+          一个安静的个人角落，用来收放随手写下的短文、认真排版过的数学学习笔记，以及自己动手做的小项目。从左侧目录随时切换，也可以点击左下角切入「城堡镇夜色」。
+        </p>
+      </section>
 
-    <figure class="castle-diorama" aria-label="Deltarune 城堡镇微缩像素场景">
-      <div class="diorama-stage">
-        <div class="diorama-stars" aria-hidden="true"></div>
-        <div class="diorama-fountain-glow" aria-hidden="true"></div>
-        <img class="diorama-fountain pixel-art" src="/assets/deltarune/castle-fountain.png" alt="" aria-hidden="true" />
-        <img class="diorama-house-left pixel-art" src="/assets/deltarune/castle-house.png" alt="" aria-hidden="true" />
-        <img class="diorama-torch-left pixel-art" src="/assets/deltarune/castle-torch.png" alt="" aria-hidden="true" />
-        <img class="diorama-book pixel-art" src="/assets/deltarune/castle-book-pillar.png" alt="" aria-hidden="true" />
-        <img class="diorama-cafe pixel-art" src="/assets/deltarune/castle-cafe.png" alt="" aria-hidden="true" />
+      <section class="home-directory" aria-labelledby="home-index-label">
+        <p class="section-label" id="home-index-label">INDEX · 站点目录</p>
+        <div class="index-grid">
+          <a class="index-card" href="/blog/">
+            <div class="index-card-top">
+              <span>02 / BLOG</span>
+              <span>MD + KaTeX</span>
+            </div>
+            <h2>随手博客</h2>
+            <p>${blogSummary}</p>
+            <div class="index-card-foot">
+              <span>进入随笔</span>
+              <span aria-hidden="true">→</span>
+            </div>
+          </a>
 
-        <button
-          type="button"
-          class="diorama-ralsei-btn"
-          id="diorama-ralsei-btn"
-          title="点击和 Ralsei 打招呼"
-        >
-          <img
-            id="diorama-ralsei-img"
-            class="diorama-ralsei pixel-art"
-            src="/assets/deltarune/ralsei-ch2.png"
-            alt="Ralsei in Castle Town"
-          />
-        </button>
+          <a class="index-card" href="/notes/">
+            <div class="index-card-top">
+              <span>03 / NOTES</span>
+              <span>${notesData.featured.pages} PAGES PDF</span>
+            </div>
+            <h2>${escapeHtml(notesData.featured.title)}</h2>
+            <p>以课程课件与杨子胥《近世代数》整理而成的 ElegantBook 笔记，支持站内在线翻阅与下载。</p>
+            <div class="index-card-foot">
+              <span>阅读笔记</span>
+              <span aria-hidden="true">→</span>
+            </div>
+          </a>
 
-        <button
-          type="button"
-          class="diorama-savepoint-btn"
-          id="diorama-savepoint-btn"
-          title="点击存档点"
-        >
-          <img
-            class="diorama-savepoint pixel-art"
-            src="/assets/deltarune/savepoint.png"
-            alt="Castle Town Save Point"
-          />
-        </button>
-
-        <div class="diorama-ground" aria-hidden="true"></div>
-      </div>
-
-      <figcaption class="diorama-bar">
-        <p class="diorama-dialogue" id="diorama-dialogue">Welcome to Castle Town. Click the star to save your visit.</p>
-        <span class="diorama-tag">CASTLE TOWN ★</span>
-      </figcaption>
-    </figure>
-
-    <section aria-labelledby="home-index-label">
-      <p class="section-label" id="home-index-label">INDEX · 站点目录</p>
-      <div class="index-grid">
-        <a class="index-card" href="/blog/">
-          <div class="index-card-top">
-            <span>02 / BLOG</span>
-            <span>MD + KaTeX</span>
-          </div>
-          <h2>随手博客</h2>
-          <p>${blogSummary}</p>
-          <div class="index-card-foot">
-            <span>进入随笔</span>
-            <span aria-hidden="true">→</span>
-          </div>
-        </a>
-
-        <a class="index-card" href="/notes/">
-          <div class="index-card-top">
-            <span>03 / NOTES</span>
-            <span>${notesData.featured.pages} PAGES PDF</span>
-          </div>
-          <h2>${escapeHtml(notesData.featured.title)}</h2>
-          <p>以课程课件与杨子胥《近世代数》整理而成的 ElegantBook 笔记，支持站内在线翻阅与下载。</p>
-          <div class="index-card-foot">
-            <span>阅读笔记</span>
-            <span aria-hidden="true">→</span>
-          </div>
-        </a>
-
-        <a class="index-card" href="/projects/">
-          <div class="index-card-top">
-            <span>04 / PROJECT</span>
-            <span>PYTHON</span>
-          </div>
-          <h2>auto_vaulting</h2>
-          <p>基于 Carpet 假人与聊天日志状态校验的 Minecraft 1.21+ 试炼宝库自动开箱脚本。</p>
-          <div class="index-card-foot">
-            <span>查看项目</span>
-            <span aria-hidden="true">→</span>
-          </div>
-        </a>
-      </div>
-    </section>
+          <a class="index-card" href="/projects/">
+            <div class="index-card-top">
+              <span>04 / PROJECT</span>
+              <span>PYTHON</span>
+            </div>
+            <h2>auto_vaulting</h2>
+            <p>基于 Carpet 假人与聊天日志状态校验的 Minecraft 1.21+ 试炼宝库自动开箱脚本。</p>
+            <div class="index-card-foot">
+              <span>查看项目</span>
+              <span aria-hidden="true">→</span>
+            </div>
+          </a>
+        </div>
+      </section>
+    </div>
   `;
 
   return renderLayout({
