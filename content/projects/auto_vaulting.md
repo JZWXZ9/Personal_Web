@@ -1,7 +1,9 @@
 ---
 title: auto_vaulting
+shortTitle: auto_vaulting
 subtitle: 基于 Carpet 假人与日志校验的 Minecraft 1.21+ 试炼宝库自动开箱脚本
-date: 2026-09
+summary: 利用试炼宝库 128 名玩家记录上限与 Carpet /player 假人机制，结合 Minecraft 聊天日志状态校验实现稳定自动开箱。
+date: 2026-09-02
 status: 持续完善中
 github: https://github.com/JZWXZ9/auto_vaulting
 tags:
@@ -9,6 +11,19 @@ tags:
   - PyAutoGUI
   - Carpet Mod
   - Minecraft 1.21+
+steps:
+  - num: STEP 01
+    title: 召唤假人
+    desc: 按坐标、朝向与编号通过聊天栏召唤 Carpet 假人
+  - num: STEP 02
+    title: 日志校验上线
+    desc: 读取 latest.log 确认假人进入，异常自动等待重试
+  - num: STEP 03
+    title: 右键开箱
+    desc: 自动发送右键交互指令开启试炼宝库
+  - num: STEP 04
+    title: 退出并复核
+    desc: 清理假人并校验退出日志后推进下一轮循环
 ---
 
 ## 项目背景

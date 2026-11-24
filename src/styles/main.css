@@ -290,12 +290,33 @@ button {
   letter-spacing: 0.03em;
 }
 
-/* Sidebar Index Navigation */
+/* Sidebar 2-Level Index Navigation */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
   gap: 4px;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-row .nav-item {
+  flex: 1;
+  min-width: 0;
 }
 
 .nav-item {
@@ -303,10 +324,10 @@ button {
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 9px 12px;
+  padding: 8px 10px 8px 12px;
   border-radius: var(--radius-sm);
   color: var(--ink-secondary);
-  font-size: 0.92rem;
+  font-size: 0.91rem;
   font-weight: 500;
   transition: background-color 0.16s ease, color 0.16s ease;
 }
@@ -321,6 +342,11 @@ button {
   color: var(--ink);
   font-weight: 600;
   box-shadow: var(--shadow-sm);
+}
+
+.nav-item.is-parent-active {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .nav-item.is-active::before {
@@ -342,16 +368,107 @@ button {
   flex-shrink: 0;
 }
 
-.nav-item.is-active .nav-index {
+.nav-item.is-active .nav-index,
+.nav-item.is-parent-active .nav-index {
   color: var(--accent);
 }
 
 .nav-en {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.67rem;
   color: var(--ink-muted);
   letter-spacing: 0.02em;
+}
+
+.nav-toggle {
+  width: 26px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-toggle:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.nav-toggle svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.18s ease;
+}
+
+.nav-group:not(.is-open) .nav-toggle svg {
+  transform: rotate(-90deg);
+}
+
+.nav-sublist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 6px 20px;
+  padding-left: 11px;
+  border-left: 1px solid var(--border);
+}
+
+.nav-group:not(.is-open) .nav-sublist {
+  display: none;
+}
+
+.nav-subitem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  color: var(--ink-secondary);
+  line-height: 1.4;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-subitem:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.nav-subitem.is-active {
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-subdot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.nav-subitem:hover .nav-subdot {
+  background: var(--ink-muted);
+}
+
+.nav-subitem.is-active .nav-subdot {
+  background: var(--accent);
+  transform: scale(1.3);
+}
+
+.nav-sublabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Sidebar Quiet Ralsei Mascot */
@@ -593,6 +710,7 @@ button {
 }
 
 [data-theme="dark"] .note-hero-card,
+[data-theme="dark"] .collection-card,
 [data-theme="dark"] .chapter-item,
 [data-theme="dark"] .project-banner,
 [data-theme="dark"] .contact-card,
@@ -879,6 +997,97 @@ button {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   color: var(--ink-muted);
+}
+
+/* ==========================================================================
+   Collection Index Cards (Notes & Projects Overview Pages)
+   ========================================================================== */
+
+.collection-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.collection-card {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 24px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.collection-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.collection-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.collection-date {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.collection-card-title {
+  margin: 0 0 8px;
+  font-family: var(--font-serif);
+  font-size: 1.32rem;
+  font-weight: 700;
+  color: var(--ink);
+  transition: color 0.16s ease;
+}
+
+.collection-card-title--mono {
+  font-family: var(--font-mono);
+  font-size: 1.24rem;
+}
+
+.collection-card:hover .collection-card-title {
+  color: var(--accent);
+}
+
+.collection-card-summary {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--ink-secondary);
+}
+
+.collection-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+}
+
+.collection-card:hover .collection-card-foot {
+  color: var(--accent);
+}
+
+.note-body {
+  margin-bottom: 26px;
+}
+
+.pdf-block {
+  margin-top: 6px;
 }
 
 /* ==========================================================================

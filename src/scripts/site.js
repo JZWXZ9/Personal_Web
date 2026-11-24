@@ -312,6 +312,38 @@
   });
 
   /* ------------------------------------------------------------------------
+     2-Level Collapsible Sidebar Navigation (persisted per session)
+     ------------------------------------------------------------------------ */
+  const STORAGE_NAV = 'jzwxz_nav_collapsed';
+  let collapsedGroups = {};
+  try {
+    collapsedGroups = JSON.parse(sessionStorage.getItem(STORAGE_NAV) || '{}') || {};
+  } catch {
+    collapsedGroups = {};
+  }
+
+  document.querySelectorAll('.nav-group[data-nav-group]').forEach((group) => {
+    const id = group.getAttribute('data-nav-group');
+    const toggle = group.querySelector('.nav-toggle');
+    if (!id || !toggle) return;
+
+    const isActiveGroup = group.getAttribute('data-active-group') === 'true';
+    if (collapsedGroups[id] === true && !isActiveGroup) {
+      group.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+
+    toggle.addEventListener('click', () => {
+      const open = group.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', String(open));
+      collapsedGroups[id] = !open;
+      try {
+        sessionStorage.setItem(STORAGE_NAV, JSON.stringify(collapsedGroups));
+      } catch {}
+    });
+  });
+
+  /* ------------------------------------------------------------------------
      Mobile Sidebar Drawer
      ------------------------------------------------------------------------ */
   const sidebar = document.getElementById('site-sidebar');
