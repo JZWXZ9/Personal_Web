@@ -16,6 +16,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static site
+        run: npm run build
+
       - name: Prepare SSH
         env:
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
@@ -41,7 +53,7 @@ jobs:
             "$SERVER_USER@$SERVER_HOST" \
             "id && test -d '$DEPLOY_PATH' && test -w '$DEPLOY_PATH'"
 
-      - name: Upload static files
+      - name: Upload built static site
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
@@ -53,17 +65,20 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o ConnectTimeout=10 \
             -P "$SERVER_PORT" -i "$HOME/.ssh/deploy_key" -r \
-            index.html styles.css script.js \
-            project-auto-vaulting.html resume-public.html resume-public.pdf public \
+            dist/* \
             "$SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/"
 
-      - name: Verify uploaded homepage
+      - name: Verify deployed routes and assets
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh -p "$SERVER_PORT" -i "$HOME/.ssh/deploy_key" \
+          ssh -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=10 \
+            -p "$SERVER_PORT" -i "$HOME/.ssh/deploy_key" \
             "$SERVER_USER@$SERVER_HOST" \
-            "test -s '$DEPLOY_PATH/index.html' && stat -c '%n %s bytes' '$DEPLOY_PATH/index.html'"
+            "for f in index.html about/index.html blog/index.html notes/index.html projects/index.html assets/main.css assets/notes/abstract-algebra.pdf; do test -s \"$DEPLOY_PATH/\$f\" && stat -c '%n %s bytes' \"$DEPLOY_PATH/\$f\"; done"

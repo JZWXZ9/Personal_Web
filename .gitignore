@@ -1,54 +1,13 @@
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/.vinext/
-/out/
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# local environment
-.env*
-
-# deployment and generated files
-.vercel
-next-env.d.ts
+# Dependencies & build output
+/node_modules/
 /dist/
-/.wrangler/
-/outputs/
-/work/
 
-# The current release is a pure static HTML/CSS/JavaScript site.
-# Keep the unused Sites/React scaffold local until the Astro migration.
-/app/
-/components/
-/hooks/
-/lib/
-/next.config.ts
-/package.json
-/tsconfig.json
-/vite.config.ts
-/components.json
-/.openai/
+# OS & editor files
+.DS_Store
+Thumbs.db
+*.log
 
-# Temporary source checkouts and local deployment notes.
+# Local temporary files & secrets
+.env*
+*.pem
 /tmp/
