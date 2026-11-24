@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -199,21 +200,14 @@ function buildNavTree(collections) {
 function renderSidebarNav(navTree, activeNav, activeSlug = '') {
   return navTree
     .map((group) => {
-      const hasChildren = group.children.length > 0;
       const isSectionMatch = group.id === activeNav;
-      const isExactParent = isSectionMatch && !activeSlug;
-      const isParentOfActiveChild = isSectionMatch && Boolean(activeSlug);
+      const isDirectLink = group.id === 'home' || group.id === 'about';
 
-      const parentClasses = ['nav-item'];
-      if (isExactParent) parentClasses.push('is-active');
-      else if (isParentOfActiveChild) parentClasses.push('is-parent-active');
-
-      const ariaCurrent = isExactParent ? ' aria-current="page"' : '';
-
-      if (!hasChildren) {
+      if (isDirectLink) {
+        const isActive = isSectionMatch;
         return `
           <div class="nav-group">
-            <a class="${parentClasses.join(' ')}" href="${group.href}"${ariaCurrent}>
+            <a class="nav-item${isActive ? ' is-active' : ''}" href="${group.href}"${isActive ? ' aria-current="page"' : ''}>
               <span class="nav-index">${group.index}</span>
               <span>${group.label}</span>
               <span class="nav-en">${group.en}</span>
@@ -221,43 +215,39 @@ function renderSidebarNav(navTree, activeNav, activeSlug = '') {
           </div>`;
       }
 
+      // Collapsible PDF-outline / Hextra-style folder group
+      const isOpenByDefault = isSectionMatch;
       const subListId = `nav-sub-${group.id}`;
-      const subItemsHtml = group.children
-        .map((child) => {
-          const childActive = isSectionMatch && activeSlug === child.slug;
-          return `
-            <a
-              class="nav-subitem${childActive ? ' is-active' : ''}"
-              href="${child.href}"${childActive ? ' aria-current="page"' : ''}
-              title="${escapeHtml(child.label)}"
-            >
-              <span class="nav-subdot" aria-hidden="true"></span>
-              <span class="nav-sublabel">${escapeHtml(child.label)}</span>
-            </a>`;
-        })
-        .join('');
+
+      const subItemsHtml =
+        group.children.length > 0
+          ? group.children
+              .map((child) => {
+                const childActive = isSectionMatch && activeSlug === child.slug;
+                return `
+                  <a
+                    class="nav-subitem${childActive ? ' is-active' : ''}"
+                    href="${child.href}"${childActive ? ' aria-current="page"' : ''}
+                    title="${escapeHtml(child.label)}"
+                  >${escapeHtml(child.label)}</a>`;
+              })
+              .join('')
+          : `<a class="nav-subitem${isSectionMatch && !activeSlug ? ' is-active' : ''}" href="${group.href}">暂无内容</a>`;
 
       return `
-        <div class="nav-group is-open" data-nav-group="${group.id}"${isSectionMatch ? ' data-active-group="true"' : ''}>
-          <div class="nav-row">
-            <a class="${parentClasses.join(' ')}" href="${group.href}"${ariaCurrent}>
-              <span class="nav-index">${group.index}</span>
-              <span>${group.label}</span>
-              <span class="nav-en">${group.en}</span>
-            </a>
-            <button
-              type="button"
-              class="nav-toggle"
-              aria-expanded="true"
-              aria-controls="${subListId}"
-              aria-label="展开或收起${group.label}二级索引"
-              title="展开或收起"
-            >
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4.5 6.2 8 9.8l3.5-3.6" />
-              </svg>
-            </button>
-          </div>
+        <div class="nav-group${isOpenByDefault ? ' is-open' : ''}" data-nav-group="${group.id}">
+          <button
+            type="button"
+            class="nav-folder${isSectionMatch ? ' is-parent-active' : ''}"
+            aria-expanded="${isOpenByDefault ? 'true' : 'false'}"
+            aria-controls="${subListId}"
+          >
+            <span class="nav-index">${group.index}</span>
+            <span class="nav-label">${group.label}</span>
+            <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 3.5 10.5 8 6 12.5" />
+            </svg>
+          </button>
           <div class="nav-sublist" id="${subListId}">
             ${subItemsHtml}
           </div>
@@ -272,6 +262,7 @@ function renderLayout({
   activeNav,
   activeSlug = '',
   navTree,
+  assetHashes,
   contentHtml,
   includeKatex = false,
 }) {
@@ -280,6 +271,8 @@ function renderLayout({
   const katexLink = includeKatex
     ? `<link rel="stylesheet" href="/assets/katex/katex.min.css" />`
     : '';
+  const cssHref = `/assets/main.css?v=${assetHashes.css}`;
+  const jsHref = `/assets/site.js?v=${assetHashes.js}`;
 
   return `<!doctype html>
 <html lang="zh-CN">
@@ -290,7 +283,7 @@ function renderLayout({
     <title>${escapeHtml(fullTitle)}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     ${katexLink}
-    <link rel="stylesheet" href="/assets/main.css" />
+    <link rel="stylesheet" href="${cssHref}" />
     <script>
       (function () {
         try {
@@ -398,7 +391,7 @@ function renderLayout({
       </div>
     </div>
 
-    <script src="/assets/site.js" defer></script>
+    <script src="${jsHref}" defer></script>
   </body>
 </html>
 `;
@@ -424,7 +417,7 @@ async function writeHtml(relativePath, html) {
   await fs.writeFile(target, html, 'utf-8');
 }
 
-function buildHomePage(collections, navTree) {
+function buildHomePage(collections, navTree, assetHashes) {
   const latestPost = collections.blog[0];
   const featuredNote = collections.notes[0];
   const featuredProject = collections.projects[0];
@@ -502,11 +495,12 @@ function buildHomePage(collections, navTree) {
     description: 'JZWXZ 的个人博客：随手博客、抽象代数学习笔记与个人项目。',
     activeNav: 'home',
     navTree,
+    assetHashes,
     contentHtml,
   });
 }
 
-async function buildAboutPage(navTree) {
+async function buildAboutPage(navTree, assetHashes) {
   const raw = await fs.readFile(path.join(CONTENT, 'pages', 'about.md'), 'utf-8');
   const { data, content } = matter(raw);
   const bodyHtml = renderMarkdown(content);
@@ -545,11 +539,12 @@ async function buildAboutPage(navTree) {
     description: '关于 JZWXZ：学习方向、常用工具与联系方式。',
     activeNav: 'about',
     navTree,
+    assetHashes,
     contentHtml,
   });
 }
 
-function buildBlogIndexPage(posts, navTree) {
+function buildBlogIndexPage(posts, navTree, assetHashes) {
   const listHtml =
     posts.length > 0
       ? `<div class="blog-list">
@@ -596,11 +591,12 @@ function buildBlogIndexPage(posts, navTree) {
     description: 'JZWXZ 的随手博客与日常记录。',
     activeNav: 'blog',
     navTree,
+    assetHashes,
     contentHtml,
   });
 }
 
-function buildBlogPostPage(post, navTree) {
+function buildBlogPostPage(post, navTree, assetHashes) {
   const tagsHtml = post.tags
     .map((t) => `<span class="chip chip--accent">${escapeHtml(t)}</span>`)
     .join('');
@@ -630,12 +626,13 @@ function buildBlogPostPage(post, navTree) {
     activeNav: 'blog',
     activeSlug: post.slug,
     navTree,
+    assetHashes,
     contentHtml,
     includeKatex: true,
   });
 }
 
-function buildNotesIndexPage(notes, navTree) {
+function buildNotesIndexPage(notes, navTree, assetHashes) {
   const listHtml =
     notes.length > 0
       ? `<div class="collection-cards">
@@ -682,11 +679,12 @@ function buildNotesIndexPage(notes, navTree) {
     description: 'JZWXZ 的学习笔记目录：抽象代数等数理与课程笔记。',
     activeNav: 'notes',
     navTree,
+    assetHashes,
     contentHtml,
   });
 }
 
-function buildNoteDetailPage(note, navTree) {
+function buildNoteDetailPage(note, navTree, assetHashes) {
   const metaChips = [];
   if (note.toolchain) metaChips.push(`<span class="chip chip--accent">${escapeHtml(note.toolchain)}</span>`);
   if (note.pages) {
@@ -803,12 +801,13 @@ function buildNoteDetailPage(note, navTree) {
     activeNav: 'notes',
     activeSlug: note.slug,
     navTree,
+    assetHashes,
     contentHtml,
     includeKatex: true,
   });
 }
 
-function buildProjectsIndexPage(projects, navTree) {
+function buildProjectsIndexPage(projects, navTree, assetHashes) {
   const listHtml =
     projects.length > 0
       ? `<div class="collection-cards">
@@ -854,11 +853,12 @@ function buildProjectsIndexPage(projects, navTree) {
     description: 'JZWXZ 的个人项目目录与实现说明。',
     activeNav: 'projects',
     navTree,
+    assetHashes,
     contentHtml,
   });
 }
 
-function buildProjectDetailPage(proj, navTree) {
+function buildProjectDetailPage(proj, navTree, assetHashes) {
   const stepsHtml =
     proj.steps.length > 0
       ? `<div class="workflow-steps" aria-label="核心执行流程">
@@ -909,12 +909,13 @@ function buildProjectDetailPage(proj, navTree) {
     activeNav: 'projects',
     activeSlug: proj.slug,
     navTree,
+    assetHashes,
     contentHtml,
     includeKatex: true,
   });
 }
 
-function build404Page(navTree) {
+function build404Page(navTree, assetHashes) {
   const contentHtml = `
     <header class="page-header">
       <p class="page-kicker">404 / LOST IN THE DARK WORLD</p>
@@ -932,6 +933,7 @@ function build404Page(navTree) {
     description: '404 - 页面未找到',
     activeNav: '',
     navTree,
+    assetHashes,
     contentHtml,
   });
 }
@@ -957,8 +959,15 @@ export async function build() {
   await fs.mkdir(path.join(DIST, 'assets'), { recursive: true });
 
   await copyDir(PUBLIC, DIST);
-  await fs.copyFile(path.join(SRC, 'styles', 'main.css'), path.join(DIST, 'assets', 'main.css'));
-  await fs.copyFile(path.join(SRC, 'scripts', 'site.js'), path.join(DIST, 'assets', 'site.js'));
+  const cssSrc = await fs.readFile(path.join(SRC, 'styles', 'main.css'));
+  const jsSrc = await fs.readFile(path.join(SRC, 'scripts', 'site.js'));
+  await fs.writeFile(path.join(DIST, 'assets', 'main.css'), cssSrc);
+  await fs.writeFile(path.join(DIST, 'assets', 'site.js'), jsSrc);
+
+  const assetHashes = {
+    css: crypto.createHash('sha256').update(cssSrc).digest('hex').slice(0, 8),
+    js: crypto.createHash('sha256').update(jsSrc).digest('hex').slice(0, 8),
+  };
 
   const katexDist = path.join(ROOT, 'node_modules', 'katex', 'dist');
   const katexOut = path.join(DIST, 'assets', 'katex');
@@ -974,29 +983,29 @@ export async function build() {
   const navTree = buildNavTree(collections);
 
   // Core pages
-  await writeHtml('index.html', buildHomePage(collections, navTree));
-  await writeHtml('about/index.html', await buildAboutPage(navTree));
+  await writeHtml('index.html', buildHomePage(collections, navTree, assetHashes));
+  await writeHtml('about/index.html', await buildAboutPage(navTree, assetHashes));
 
   // Blog index + per-md detail pages
-  await writeHtml('blog/index.html', buildBlogIndexPage(collections.blog, navTree));
+  await writeHtml('blog/index.html', buildBlogIndexPage(collections.blog, navTree, assetHashes));
   for (const post of collections.blog) {
-    await writeHtml(`blog/${post.slug}/index.html`, buildBlogPostPage(post, navTree));
+    await writeHtml(`blog/${post.slug}/index.html`, buildBlogPostPage(post, navTree, assetHashes));
   }
 
   // Notes index + per-md detail pages
-  await writeHtml('notes/index.html', buildNotesIndexPage(collections.notes, navTree));
+  await writeHtml('notes/index.html', buildNotesIndexPage(collections.notes, navTree, assetHashes));
   for (const note of collections.notes) {
-    await writeHtml(`notes/${note.slug}/index.html`, buildNoteDetailPage(note, navTree));
+    await writeHtml(`notes/${note.slug}/index.html`, buildNoteDetailPage(note, navTree, assetHashes));
   }
 
   // Projects index + per-md detail pages
-  await writeHtml('projects/index.html', buildProjectsIndexPage(collections.projects, navTree));
+  await writeHtml('projects/index.html', buildProjectsIndexPage(collections.projects, navTree, assetHashes));
   for (const proj of collections.projects) {
-    await writeHtml(`projects/${proj.slug}/index.html`, buildProjectDetailPage(proj, navTree));
+    await writeHtml(`projects/${proj.slug}/index.html`, buildProjectDetailPage(proj, navTree, assetHashes));
   }
 
   // 404 & legacy redirect
-  await writeHtml('404.html', build404Page(navTree));
+  await writeHtml('404.html', build404Page(navTree, assetHashes));
   await writeHtml('project-auto-vaulting.html', buildLegacyRedirect('/projects/auto_vaulting/'));
 
   const ms = Date.now() - start;
