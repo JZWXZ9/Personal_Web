@@ -158,7 +158,7 @@ function estimateReadingMinutes(markdownText) {
   return Math.max(1, Math.ceil((cjk + words * 1.5) / 360));
 }
 
-async function loadCollection(folderName) {
+async function loadCollection(folderName, urlPrefix = folderName) {
   const dir = path.join(CONTENT, folderName);
   let files = [];
   try {
@@ -178,10 +178,11 @@ async function loadCollection(folderName) {
     const rendered = content.trim().length > 0 ? renderMarkdownWithToc(content) : { html: '', headings: [] };
     items.push({
       slug,
-      href: `/${folderName}/${encodeURIComponent(slug)}/`,
+      href: `/${urlPrefix}/${encodeURIComponent(slug)}/`,
       title: data.title || slug,
       shortTitle: data.shortTitle || data.title || slug,
       subtitle: data.subtitle || '',
+      category: data.category || '',
       date: formatDate(data.date),
       order: typeof data.order === 'number' ? data.order : null,
       summary: data.summary || data.subtitle || '',
@@ -224,7 +225,7 @@ function buildNavTree(collections) {
       label: '随笔',
       en: 'Blog',
       href: '/blog/',
-      children: collections.blog.map((item) => ({
+      children: collections.blogCategories.map((item) => ({
         slug: item.slug,
         label: item.shortTitle,
         href: item.href,
@@ -266,8 +267,8 @@ function renderSidebarNav(navTree, activeNav, activeSlug = '') {
       if (isDirectLink) {
         const isActive = isSectionMatch;
         return `
-          <div class="nav-group">
-            <a class="nav-item${isActive ? ' is-active' : ''}" href="${group.href}"${isActive ? ' aria-current="page"' : ''}>
+          <div class="nav-group" data-nav-direct="${group.id}">
+            <a class="nav-item${isActive ? ' is-active' : ''}" href="${group.href}" data-nav-id="${group.id}"${isActive ? ' aria-current="page"' : ''}>
               <span class="nav-index">${group.index}</span>
               <span>${group.label}</span>
               <span class="nav-en">${group.en}</span>
@@ -275,7 +276,7 @@ function renderSidebarNav(navTree, activeNav, activeSlug = '') {
           </div>`;
       }
 
-      // Collapsible PDF-outline / Hextra-style folder group
+      // Collapsible PDF-outline / Hextra-style folder group with smooth CSS grid wrapper
       const isOpenByDefault = isSectionMatch;
       const subListId = `nav-sub-${group.id}`;
 
@@ -287,7 +288,9 @@ function renderSidebarNav(navTree, activeNav, activeSlug = '') {
                 return `
                   <a
                     class="nav-subitem${childActive ? ' is-active' : ''}"
-                    href="${child.href}"${childActive ? ' aria-current="page"' : ''}
+                    href="${child.href}"
+                    data-nav-parent="${group.id}"
+                    data-nav-slug="${escapeHtml(child.slug)}"${childActive ? ' aria-current="page"' : ''}
                     title="${escapeHtml(child.label)}"
                   >${escapeHtml(child.label)}</a>`;
               })
@@ -308,8 +311,10 @@ function renderSidebarNav(navTree, activeNav, activeSlug = '') {
               <path d="M6 3.5 10.5 8 6 12.5" />
             </svg>
           </button>
-          <div class="nav-sublist" id="${subListId}">
-            ${subItemsHtml}
+          <div class="nav-sublist-wrap" id="${subListId}">
+            <div class="nav-sublist">
+              ${subItemsHtml}
+            </div>
           </div>
         </div>`;
     })
@@ -328,9 +333,7 @@ function renderLayout({
 }) {
   const fullTitle = activeNav === 'home' ? `${SITE.brand} · 个人博客` : `${title} · ${SITE.brand}`;
   const navHtml = renderSidebarNav(navTree, activeNav, activeSlug);
-  const katexLink = includeKatex
-    ? `<link rel="stylesheet" href="/assets/katex/katex.min.css" />`
-    : '';
+  const katexLink = `<link rel="stylesheet" href="/assets/katex/katex.min.css" />`;
   const cssHref = `/assets/main.css?v=${assetHashes.css}`;
   const jsHref = `/assets/site.js?v=${assetHashes.js}`;
 
@@ -441,7 +444,7 @@ function renderLayout({
       </aside>
 
       <div class="main-wrap">
-        <main class="main-content">
+        <main class="main-content" data-active-nav="${escapeHtml(activeNav)}" data-active-slug="${escapeHtml(activeSlug)}">
           ${contentHtml}
         </main>
         <footer class="page-footer">
@@ -604,47 +607,69 @@ async function buildAboutPage(navTree, assetHashes) {
   });
 }
 
-function buildBlogIndexPage(posts, navTree, assetHashes) {
+function buildBlogIndexPage(categories, posts, navTree, assetHashes) {
+  const catCardsHtml = categories
+    .map((cat) => {
+      const count = posts.filter((p) => p.category === cat.slug).length;
+      return `
+        <a class="category-card" href="${cat.href}">
+          <div class="category-card-top">
+            <span class="category-card-title">${escapeHtml(cat.title)}</span>
+            <span class="category-card-count">${count > 0 ? `${count} 篇` : '目录'}</span>
+          </div>
+          ${cat.summary ? `<p class="category-card-summary">${escapeHtml(cat.summary)}</p>` : ''}
+        </a>`;
+    })
+    .join('');
+
   const listHtml =
     posts.length > 0
-      ? `<div class="blog-list">
-          ${posts
-            .map(
-              (post) => `
-            <a class="blog-row" href="${post.href}">
-              <time class="blog-date" datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time>
-              <div>
-                <h2 class="blog-row-title">${escapeHtml(post.title)}</h2>
-                ${post.summary ? `<p class="blog-row-summary">${escapeHtml(post.summary)}</p>` : ''}
-                ${
-                  post.tags.length > 0
-                    ? `<div class="chip-row">${post.tags
-                        .map((t) => `<span class="chip">${escapeHtml(t)}</span>`)
-                        .join('')}</div>`
-                    : ''
-                }
-              </div>
-            </a>`
-            )
-            .join('')}
-        </div>`
-      : `<div class="blog-empty">
-          <p>这里暂时留白，等待写下第一篇随手记录。</p>
-        </div>`;
+      ? `<section class="blog-recent-block" aria-labelledby="blog-recent-heading">
+          <p class="section-label" id="blog-recent-heading">RECENT · 最近更新</p>
+          <div class="blog-list">
+            ${posts
+              .map(
+                (post) => `
+              <a class="blog-row" href="${post.href}">
+                <time class="blog-date" datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time>
+                <div>
+                  <h2 class="blog-row-title">${escapeHtml(post.title)}</h2>
+                  ${post.summary ? `<p class="blog-row-summary">${escapeHtml(post.summary)}</p>` : ''}
+                  ${
+                    post.tags.length > 0
+                      ? `<div class="chip-row">${post.tags
+                          .map((t) => `<span class="chip">${escapeHtml(t)}</span>`)
+                          .join('')}</div>`
+                      : ''
+                  }
+                </div>
+              </a>`
+              )
+              .join('')}
+          </div>
+        </section>`
+      : '';
 
   const contentHtml = `
     <header class="page-header">
       <p class="page-kicker">02 / BLOG</p>
       <h1 class="page-title">随手博客</h1>
-      <p class="page-subtitle">零散的思考、技术备忘与日常记录。</p>
+      <p class="page-subtitle">按主题整理的目录与日常思考。点击下方分类或左侧二级目录即可进入对应专题。</p>
     </header>
+
+    <section aria-labelledby="blog-cat-heading">
+      <p class="section-label" id="blog-cat-heading">CATEGORIES · 随笔分类</p>
+      <div class="category-grid">
+        ${catCardsHtml}
+      </div>
+    </section>
 
     ${listHtml}
   `;
 
   return renderLayout({
     title: '随笔',
-    description: 'JZWXZ 的随手博客与日常记录。',
+    description: 'JZWXZ 的随手博客分类目录与近期文章。',
     activeNav: 'blog',
     navTree,
     assetHashes,
@@ -652,13 +677,64 @@ function buildBlogIndexPage(posts, navTree, assetHashes) {
   });
 }
 
-function buildBlogPostPage(post, navTree, assetHashes) {
+function buildBlogCategoryPage(cat, posts, navTree, assetHashes) {
+  // Include any posts tagged with this category that aren't already manually linked in the category .md
+  const autoPosts = posts.filter((p) => p.category === cat.slug && !cat.html.includes(p.href));
+  const autoListHtml =
+    autoPosts.length > 0
+      ? `<section class="blog-recent-block" aria-labelledby="cat-auto-heading">
+          <p class="section-label" id="cat-auto-heading">POSTS · 收录文章</p>
+          <div class="blog-list">
+            ${autoPosts
+              .map(
+                (post) => `
+              <a class="blog-row" href="${post.href}">
+                <time class="blog-date" datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time>
+                <div>
+                  <h2 class="blog-row-title">${escapeHtml(post.title)}</h2>
+                  ${post.summary ? `<p class="blog-row-summary">${escapeHtml(post.summary)}</p>` : ''}
+                </div>
+              </a>`
+              )
+              .join('')}
+          </div>
+        </section>`
+      : '';
+
+  const contentHtml = `
+    <a class="back-link" href="/blog/">← 返回全部随笔分类</a>
+
+    <header class="page-header">
+      <p class="page-kicker">02 / CATEGORY</p>
+      <h1 class="page-title">${escapeHtml(cat.title)}</h1>
+      ${cat.summary ? `<p class="page-subtitle">${escapeHtml(cat.summary)}</p>` : ''}
+    </header>
+
+    ${cat.hasBody ? `<article class="prose">${cat.html}</article>` : ''}
+    ${autoListHtml}
+  `;
+
+  return renderLayout({
+    title: cat.title,
+    description: cat.summary || cat.title,
+    activeNav: 'blog',
+    activeSlug: cat.slug,
+    navTree,
+    assetHashes,
+    contentHtml,
+  });
+}
+
+function buildBlogPostPage(post, categories, navTree, assetHashes) {
+  const parentCat = categories.find((c) => c.slug === post.category) || null;
+  const backHref = parentCat ? parentCat.href : '/blog/';
+  const backText = parentCat ? `← 返回${parentCat.title}` : '← 返回随笔目录';
   const tagsHtml = post.tags
     .map((t) => `<span class="chip chip--accent">${escapeHtml(t)}</span>`)
     .join('');
 
   const contentHtml = `
-    <a class="back-link" href="/blog/">← 返回随笔列表</a>
+    <a class="back-link" href="${backHref}">${escapeHtml(backText)}</a>
 
     <header class="page-header">
       <p class="page-kicker">02 / ESSAY</p>
@@ -682,7 +758,7 @@ function buildBlogPostPage(post, navTree, assetHashes) {
     title: post.title,
     description: post.summary || post.title,
     activeNav: 'blog',
-    activeSlug: post.slug,
+    activeSlug: parentCat ? parentCat.slug : '',
     navTree,
     assetHashes,
     contentHtml,
@@ -1028,9 +1104,10 @@ export async function build() {
   await copyDir(path.join(katexDist, 'fonts'), path.join(katexOut, 'fonts'));
 
   const collections = {
-    blog: await loadCollection('blog'),
-    notes: await loadCollection('notes'),
-    projects: await loadCollection('projects'),
+    blog: await loadCollection('blog', 'blog'),
+    blogCategories: await loadCollection(path.join('blog', 'categories'), 'blog'),
+    notes: await loadCollection('notes', 'notes'),
+    projects: await loadCollection('projects', 'projects'),
   };
   const navTree = buildNavTree(collections);
 
@@ -1038,10 +1115,22 @@ export async function build() {
   await writeHtml('index.html', buildHomePage(collections, navTree, assetHashes));
   await writeHtml('about/index.html', await buildAboutPage(navTree, assetHashes));
 
-  // Blog index + per-md detail pages
-  await writeHtml('blog/index.html', buildBlogIndexPage(collections.blog, navTree, assetHashes));
+  // Blog index + category directory pages + per-md post pages
+  await writeHtml(
+    'blog/index.html',
+    buildBlogIndexPage(collections.blogCategories, collections.blog, navTree, assetHashes)
+  );
+  for (const cat of collections.blogCategories) {
+    await writeHtml(
+      `blog/${cat.slug}/index.html`,
+      buildBlogCategoryPage(cat, collections.blog, navTree, assetHashes)
+    );
+  }
   for (const post of collections.blog) {
-    await writeHtml(`blog/${post.slug}/index.html`, buildBlogPostPage(post, navTree, assetHashes));
+    await writeHtml(
+      `blog/${post.slug}/index.html`,
+      buildBlogPostPage(post, collections.blogCategories, navTree, assetHashes)
+    );
   }
 
   // Notes index + per-md detail pages
@@ -1062,7 +1151,7 @@ export async function build() {
 
   const ms = Date.now() - start;
   console.log(
-    `Built static site into dist/ (${collections.blog.length} blog, ${collections.notes.length} notes, ${collections.projects.length} projects) in ${ms}ms`
+    `Built static site into dist/ (${collections.blogCategories.length} blog categories, ${collections.blog.length} blog posts, ${collections.notes.length} notes, ${collections.projects.length} projects) in ${ms}ms`
   );
 }
 

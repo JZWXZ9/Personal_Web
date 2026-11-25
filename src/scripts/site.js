@@ -371,4 +371,147 @@
       setDrawer(false, true);
     }
   });
+
+  /* ------------------------------------------------------------------------
+     Lightweight PJAX Soft Navigation
+     Swaps only <main class="main-content"> so .castle-backdrop, Dark Fountain
+     Canvas, twinkling stars, and Ralsei's fluttering scarf stay 100% continuous!
+     ------------------------------------------------------------------------ */
+  const mainEl = document.querySelector('main.main-content');
+  let activeFetchController = null;
+
+  function updateSidebarActiveState(activeNav, activeSlug) {
+    // Direct links (00 首页, 01 简介)
+    document.querySelectorAll('.sidebar-nav .nav-item[data-nav-id]').forEach((link) => {
+      const match = link.getAttribute('data-nav-id') === activeNav;
+      link.classList.toggle('is-active', match);
+      if (match) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    });
+
+    // Collapsible folder groups (02 随笔, 03 笔记, 04 项目)
+    document.querySelectorAll('.nav-group[data-nav-group]').forEach((group) => {
+      const groupId = group.getAttribute('data-nav-group');
+      const folderBtn = group.querySelector('.nav-folder');
+      const isMatch = groupId === activeNav;
+
+      folderBtn?.classList.toggle('is-parent-active', isMatch);
+      if (isMatch && !group.classList.contains('is-open')) {
+        group.classList.add('is-open');
+        folderBtn?.setAttribute('aria-expanded', 'true');
+      }
+
+      group.querySelectorAll('.nav-subitem').forEach((sub) => {
+        const subSlug = sub.getAttribute('data-nav-slug') || '';
+        const isSubMatch = isMatch && Boolean(activeSlug) && subSlug === activeSlug;
+        sub.classList.toggle('is-active', isSubMatch);
+        if (isSubMatch) sub.setAttribute('aria-current', 'page');
+        else sub.removeAttribute('aria-current');
+      });
+    });
+  }
+
+  async function softNavigate(targetUrl, pushState = true) {
+    if (!mainEl) {
+      window.location.href = targetUrl.href;
+      return;
+    }
+
+    if (activeFetchController) {
+      activeFetchController.abort();
+    }
+    activeFetchController = new AbortController();
+
+    try {
+      const resp = await fetch(targetUrl.href, {
+        signal: activeFetchController.signal,
+        headers: { 'X-Requested-With': 'pjax' },
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const contentType = resp.headers.get('content-type') || '';
+      if (!contentType.includes('text/html')) {
+        window.location.href = targetUrl.href;
+        return;
+      }
+
+      const html = await resp.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const nextMain = doc.querySelector('main.main-content');
+      if (!nextMain) {
+        window.location.href = targetUrl.href;
+        return;
+      }
+
+      mainEl.innerHTML = nextMain.innerHTML;
+      const nextNav = nextMain.getAttribute('data-active-nav') || '';
+      const nextSlug = nextMain.getAttribute('data-active-slug') || '';
+      mainEl.setAttribute('data-active-nav', nextNav);
+      mainEl.setAttribute('data-active-slug', nextSlug);
+
+      if (doc.title) document.title = doc.title;
+      if (pushState) {
+        window.history.pushState({ pjax: true }, '', targetUrl.href);
+      }
+
+      updateSidebarActiveState(nextNav, nextSlug);
+      setDrawer(false, false);
+
+      // Gentle entrance transition without touching the Castle Town backdrop
+      mainEl.classList.remove('is-entering');
+      void mainEl.offsetWidth;
+      mainEl.classList.add('is-entering');
+
+      if (targetUrl.hash) {
+        const anchorTarget = document.getElementById(decodeURIComponent(targetUrl.hash.slice(1)));
+        if (anchorTarget) {
+          anchorTarget.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        }
+      } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      window.location.href = targetUrl.href;
+    }
+  }
+
+  document.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+    if (!link) return;
+    if (link.hasAttribute('download') || link.getAttribute('target') === '_blank') return;
+
+    const rawHref = link.getAttribute('href') || '';
+    if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('mailto:') || rawHref.startsWith('tel:')) {
+      return;
+    }
+
+    let url;
+    try {
+      url = new URL(link.href, window.location.href);
+    } catch {
+      return;
+    }
+
+    if (url.origin !== window.location.origin) return;
+    if (url.pathname.toLowerCase().endsWith('.pdf')) return;
+    if (url.pathname === window.location.pathname && url.search === window.location.search) {
+      if (url.hash) return; // Same-page anchor scroll
+      event.preventDefault();
+      setDrawer(false, false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    event.preventDefault();
+    softNavigate(url, true);
+  });
+
+  window.addEventListener('popstate', () => {
+    softNavigate(new URL(window.location.href), false);
+  });
 })();

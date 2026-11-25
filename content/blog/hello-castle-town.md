@@ -1,6 +1,7 @@
 ---
 title: Hello, Castle Town
 date: 2026-11-24
+category: daily-life
 summary: 博客重做后的第一条留档，顺便测试 Markdown、代码高亮与 KaTeX 数学公式渲染。
 tags:
   - 随笔

@@ -387,7 +387,7 @@ button {
   height: 14px;
   color: var(--ink-muted);
   flex-shrink: 0;
-  transition: transform 0.18s ease, color 0.16s ease;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), color 0.16s ease;
 }
 
 .nav-folder:hover .nav-chevron,
@@ -399,18 +399,42 @@ button {
   transform: rotate(90deg);
 }
 
-/* Pure-text indented child list (hoa.moe / PDF outline style) */
+/* Smooth CSS Grid Accordion for pure-text indented child list */
+.nav-sublist-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease,
+    visibility 0.26s ease;
+}
+
+.nav-group.is-open .nav-sublist-wrap {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+}
+
 .nav-sublist {
-  display: none;
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
   flex-direction: column;
   gap: 2px;
-  margin: 3px 0 6px 20px;
-  padding-left: 12px;
+  margin: 0 0 0 20px;
+  padding: 0 0 0 12px;
   border-left: 1px solid var(--border);
+  transform: translateY(-4px);
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    margin 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .nav-group.is-open .nav-sublist {
-  display: flex;
+  margin: 3px 0 6px 20px;
+  transform: translateY(0);
 }
 
 .nav-subitem {
@@ -686,6 +710,7 @@ button {
 
 [data-theme="dark"] .note-hero-card,
 [data-theme="dark"] .collection-card,
+[data-theme="dark"] .category-card,
 [data-theme="dark"] .article-toc,
 [data-theme="dark"] .chapter-item,
 [data-theme="dark"] .project-banner,
@@ -695,6 +720,22 @@ button {
 [data-theme="dark"] .pdf-viewer-shell {
   backdrop-filter: blur(11px);
   -webkit-backdrop-filter: blur(11px);
+}
+
+/* Gentle PJAX content entrance without disturbing Castle Town backdrop */
+.main-content.is-entering {
+  animation: contentReveal 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes contentReveal {
+  from {
+    opacity: 0.45;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 [data-theme="dark"] .blog-list {
@@ -871,8 +912,72 @@ button {
 }
 
 /* ==========================================================================
-   Blog List & Article View
+   Blog Categories Grid & Blog List / Article View
    ========================================================================== */
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.category-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.category-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.category-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  transition: color 0.15s ease;
+}
+
+.category-card:hover .category-card-title {
+  color: var(--accent);
+}
+
+.category-card-count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  flex-shrink: 0;
+}
+
+.category-card-summary {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--ink-secondary);
+}
+
+.blog-recent-block {
+  margin-top: 28px;
+}
 
 .blog-list {
   display: flex;
@@ -1675,7 +1780,8 @@ button {
     padding: 16px 6px;
   }
 
-  .contact-grid {
+  .contact-grid,
+  .category-grid {
     grid-template-columns: 1fr;
   }
 
