@@ -664,10 +664,18 @@ button {
 }
 
 [data-theme="dark"] .welcome-hero .page-title,
-[data-theme="dark"] .welcome-lead,
-[data-theme="dark"] .page-header .page-title,
-[data-theme="dark"] .page-header .page-subtitle {
+[data-theme="dark"] .welcome-lead {
   text-shadow: 0 2px 14px rgba(6, 8, 18, 0.78);
+}
+
+/* Soft dark frosted veil behind inner page titles & dates over the glowing Dark Fountain */
+[data-theme="dark"] .page-header {
+  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  background: rgba(12, 16, 30, 0.64);
+  border: 1px solid rgba(105, 130, 196, 0.2);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
 }
 
 [data-theme="dark"] .index-card {
@@ -678,6 +686,7 @@ button {
 
 [data-theme="dark"] .note-hero-card,
 [data-theme="dark"] .collection-card,
+[data-theme="dark"] .article-toc,
 [data-theme="dark"] .chapter-item,
 [data-theme="dark"] .project-banner,
 [data-theme="dark"] .contact-card,
@@ -1347,6 +1356,99 @@ button {
   font-size: 0.92rem;
   font-weight: 500;
   color: var(--ink);
+}
+
+/* ==========================================================================
+   In-Article Collapsible TOC & Heading Anchors
+   ========================================================================== */
+
+.article-toc {
+  margin: 0 0 22px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.article-toc-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.article-toc-summary::-webkit-details-marker {
+  display: none;
+}
+
+.article-toc-summary:hover {
+  background: var(--surface-subtle);
+  color: var(--ink);
+}
+
+.article-toc-count {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
+
+.article-toc-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.article-toc-link {
+  display: block;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--ink-secondary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.article-toc-link:hover {
+  background: var(--surface-hover);
+  color: var(--accent);
+}
+
+.article-toc-link.is-sub {
+  padding-left: 22px;
+  font-size: 0.81rem;
+  color: var(--ink-muted);
+}
+
+.prose h2,
+.prose h3 {
+  position: relative;
+  scroll-margin-top: 72px;
+}
+
+.heading-anchor {
+  margin-right: 7px;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.85em;
+  color: var(--ink-muted);
+  text-decoration: none !important;
+  opacity: 0.35;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.prose h2:hover .heading-anchor,
+.prose h3:hover .heading-anchor,
+.heading-anchor:focus-visible {
+  opacity: 1;
+  color: var(--accent);
 }
 
 /* ==========================================================================

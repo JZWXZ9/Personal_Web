@@ -23,21 +23,6 @@ const SITE = {
   year: '2026',
 };
 
-const marked = new Marked({
-  gfm: true,
-  breaks: false,
-  renderer: {
-    code({ text, lang }) {
-      const language = lang && hljs.getLanguage(lang) ? lang : null;
-      const highlighted = language
-        ? hljs.highlight(text, { language }).value
-        : escapeHtml(text);
-      const cls = language ? ` class="hljs language-${escapeHtml(language)}"` : ' class="hljs"';
-      return `<pre><code${cls}>${highlighted}</code></pre>\n`;
-    },
-  },
-});
-
 function escapeHtml(str) {
   return String(str ?? '')
     .replaceAll('&', '&amp;')
@@ -47,9 +32,31 @@ function escapeHtml(str) {
     .replaceAll("'", '&#39;');
 }
 
-function renderMarkdown(rawMarkdown) {
+function slugifyHeading(text, usedSlugs) {
+  const plain = String(text ?? '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&[a-z#0-9]+;/gi, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  const base = plain || 'section';
+  let slug = base;
+  let n = 2;
+  while (usedSlugs.has(slug)) {
+    slug = `${base}-${n++}`;
+  }
+  usedSlugs.add(slug);
+  return slug;
+}
+
+function renderMarkdownWithToc(rawMarkdown) {
   const codePlaceholders = [];
   const mathPlaceholders = [];
+  const headings = [];
+  const usedSlugs = new Set();
 
   let text = rawMarkdown.replace(/```[\s\S]*?```|`[^`\n]+`/g, (match) => {
     const token = `@@CODE_BLOCK_${codePlaceholders.length}@@`;
@@ -80,11 +87,62 @@ function renderMarkdown(rawMarkdown) {
   });
 
   text = text.replace(/@@CODE_BLOCK_(\d+)@@/g, (_, idx) => codePlaceholders[Number(idx)]);
-  let html = marked.parse(text);
+
+  const instance = new Marked({
+    gfm: true,
+    breaks: false,
+    renderer: {
+      code({ text: codeText, lang }) {
+        const language = lang && hljs.getLanguage(lang) ? lang : null;
+        const highlighted = language
+          ? hljs.highlight(codeText, { language }).value
+          : escapeHtml(codeText);
+        const cls = language ? ` class="hljs language-${escapeHtml(language)}"` : ' class="hljs"';
+        return `<pre><code${cls}>${highlighted}</code></pre>\n`;
+      },
+      heading({ tokens, depth }) {
+        const innerHtml = this.parser.parseInline(tokens);
+        if (depth === 2 || depth === 3) {
+          const cleanText = innerHtml.replace(/<[^>]+>/g, '').trim();
+          const id = slugifyHeading(cleanText, usedSlugs);
+          headings.push({ depth, id, text: cleanText });
+          return `<h${depth} id="${escapeHtml(id)}"><a class="heading-anchor" href="#${escapeHtml(id)}" aria-label="定位到此小节">#</a>${innerHtml}</h${depth}>\n`;
+        }
+        return `<h${depth}>${innerHtml}</h${depth}>\n`;
+      },
+    },
+  });
+
+  let html = instance.parse(text);
   html = html.replace(/<p>@@MATH_BLOCK_(\d+)@@<\/p>/g, (_, idx) => mathPlaceholders[Number(idx)]);
   html = html.replace(/@@MATH_(?:BLOCK|INLINE)_(\d+)@@/g, (_, idx) => mathPlaceholders[Number(idx)]);
 
-  return html;
+  return { html, headings };
+}
+
+function renderMarkdown(rawMarkdown) {
+  return renderMarkdownWithToc(rawMarkdown).html;
+}
+
+function renderArticleToc(headings) {
+  const topCount = headings.filter((h) => h.depth === 2).length;
+  if (topCount < 2) return '';
+
+  return `
+    <details class="article-toc">
+      <summary class="article-toc-summary">
+        <span>本文目录</span>
+        <span class="article-toc-count">${headings.length} 节</span>
+      </summary>
+      <nav class="article-toc-nav" aria-label="文章目录">
+        ${headings
+          .map(
+            (h) =>
+              `<a class="article-toc-link${h.depth === 3 ? ' is-sub' : ''}" href="#${escapeHtml(h.id)}">${escapeHtml(h.text)}</a>`
+          )
+          .join('')}
+      </nav>
+    </details>`;
 }
 
 function formatDate(dateVal) {
@@ -117,6 +175,7 @@ async function loadCollection(folderName) {
     if (data.draft === true) continue;
 
     const slug = file.replace(/\.md$/i, '');
+    const rendered = content.trim().length > 0 ? renderMarkdownWithToc(content) : { html: '', headings: [] };
     items.push({
       slug,
       href: `/${folderName}/${encodeURIComponent(slug)}/`,
@@ -140,7 +199,8 @@ async function loadCollection(folderName) {
       steps: Array.isArray(data.steps) ? data.steps : [],
       readingMinutes: estimateReadingMinutes(content),
       hasBody: content.trim().length > 0,
-      html: content.trim().length > 0 ? renderMarkdown(content) : '',
+      html: rendered.html,
+      headings: rendered.headings,
     });
   }
 
@@ -576,14 +636,10 @@ function buildBlogIndexPage(posts, navTree, assetHashes) {
     <header class="page-header">
       <p class="page-kicker">02 / BLOG</p>
       <h1 class="page-title">随手博客</h1>
-      <p class="page-subtitle">零散的思考、技术备忘与日常记录。每篇文章都是 <code>content/blog/</code> 下的一份独立 Markdown 文件。</p>
+      <p class="page-subtitle">零散的思考、技术备忘与日常记录。</p>
     </header>
 
     ${listHtml}
-
-    <div class="blog-tip">
-      新增随笔：在 <code>content/blog/</code> 下新建 <code>.md</code> 文件（支持代码高亮与 KaTeX 数学公式），推送到 <code>main</code> 后会自动生成文章页并加入左侧二级索引。
-    </div>
   `;
 
   return renderLayout({
@@ -614,6 +670,8 @@ function buildBlogPostPage(post, navTree, assetHashes) {
         ${tagsHtml ? `<div class="chip-row">${tagsHtml}</div>` : ''}
       </div>
     </header>
+
+    ${renderArticleToc(post.headings)}
 
     <article class="prose">
       ${post.html}
@@ -664,14 +722,10 @@ function buildNotesIndexPage(notes, navTree, assetHashes) {
     <header class="page-header">
       <p class="page-kicker">03 / STUDY NOTES</p>
       <h1 class="page-title">学习笔记</h1>
-      <p class="page-subtitle">比起零碎摘录，更想留下经得起反复翻看的成体系笔记。每份笔记对应 <code>content/notes/</code> 下一个独立 Markdown 文件。</p>
+      <p class="page-subtitle">比起零碎摘录，更想留下经得起反复翻看的成体系笔记。</p>
     </header>
 
     ${listHtml}
-
-    <div class="blog-tip">
-      新增笔记：在 <code>content/notes/</code> 下新建 <code>.md</code> 文件即可（支持纯 Markdown + KaTeX 公式，也支持绑定 PDF 预览与章节目录），推送后自动加入左侧二级索引。
-    </div>
   `;
 
   return renderLayout({
@@ -790,6 +844,7 @@ function buildNoteDetailPage(note, navTree, assetHashes) {
       ${actionBtns.length > 0 ? `<div class="btn-row">${actionBtns.join('')}</div>` : ''}
     </section>
 
+    ${renderArticleToc(note.headings)}
     ${note.hasBody ? `<article class="prose note-body">${note.html}</article>` : ''}
     ${chaptersHtml}
     ${pdfViewerHtml}
@@ -838,14 +893,10 @@ function buildProjectsIndexPage(projects, navTree, assetHashes) {
     <header class="page-header">
       <p class="page-kicker">04 / PROJECTS</p>
       <h1 class="page-title">项目介绍</h1>
-      <p class="page-subtitle">记录从实际需求出发动手写出来、原理清晰可复现的作品。每个项目对应 <code>content/projects/</code> 下一个独立 Markdown 文件。</p>
+      <p class="page-subtitle">记录从实际需求出发动手写出来、原理清晰可复现的作品。</p>
     </header>
 
     ${listHtml}
-
-    <div class="blog-tip">
-      新增项目：在 <code>content/projects/</code> 下新建 <code>.md</code> 文件，推送到 <code>main</code> 后会自动生成独立项目页并加入左侧二级索引。
-    </div>
   `;
 
   return renderLayout({
@@ -900,6 +951,7 @@ function buildProjectDetailPage(proj, navTree, assetHashes) {
       ${stepsHtml}
     </section>
 
+    ${renderArticleToc(proj.headings)}
     ${proj.hasBody ? `<article class="prose">${proj.html}</article>` : ''}
   `;
 
